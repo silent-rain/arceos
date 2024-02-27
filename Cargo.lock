@@ -471,6 +471,7 @@ dependencies = [
  "axerrno",
  "axfeat",
  "axio",
+ "hashbrown",
  "spinlock",
 ]
 
