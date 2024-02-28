@@ -5,7 +5,9 @@ use std::alloc::{Allocator, Layout};
 use std::collections::BTreeMap;
 use std::io::Write;
 
-use allocator::{AllocatorRc, BuddyByteAllocator, SlabByteAllocator, TlsfByteAllocator};
+use allocator::{
+    AllocatorRc, BuddyByteAllocator, MergingAllocator, SlabByteAllocator, TlsfByteAllocator,
+};
 use rand::{prelude::SliceRandom, Rng};
 
 const POOL_SIZE: usize = 1024 * 1024 * 128;
@@ -64,7 +66,7 @@ pub fn test_alignment(n: usize, alloc: &(impl Allocator + Clone)) {
     let mut rng = rand::thread_rng();
     let mut blocks = vec![];
     for _ in 0..n {
-        if rng.gen_ratio(2, 3) || blocks.len() == 0 {
+        if rng.gen_ratio(2, 3) || blocks.is_empty() {
             // insert a block
             let size =
                 ((1 << rng.gen_range(0..16)) as f32 * rng.gen_range(1.0..2.0)).round() as usize;
@@ -139,5 +141,17 @@ fn tlsf_alloc() {
         test_vec2(30_000, 64, &alloc);
         test_vec2(7_500, 520, &alloc);
         test_btree_map(50_000, &alloc);
+    })
+}
+
+#[test]
+fn merging_alloc() {
+    run_test(|pool| {
+        let alloc = AllocatorRc::new(MergingAllocator::new(), pool);
+        test_alignment(50, &alloc);
+        // test_vec(3_000_000, &alloc);
+        // test_vec2(30_000, 64, &alloc);
+        // test_vec2(7_500, 520, &alloc);
+        // test_btree_map(50_000, &alloc);
     })
 }

@@ -31,6 +31,11 @@ mod tlsf;
 #[cfg(feature = "tlsf")]
 pub use tlsf::TlsfByteAllocator;
 
+#[cfg(feature = "merging")]
+mod merging;
+#[cfg(feature = "merging")]
+pub use merging::MergingAllocator;
+
 use core::alloc::Layout;
 use core::ptr::NonNull;
 
