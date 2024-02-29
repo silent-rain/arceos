@@ -1,6 +1,7 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+#[allow(unused_imports)]
 #[cfg(feature = "alloc")]
 use alloc::collections::*;
 

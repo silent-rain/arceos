@@ -56,6 +56,7 @@
 #![feature(try_reserve_kind)]
 #![feature(thread_local)]
 #![feature(const_hash)]
+#![allow(internal_features)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

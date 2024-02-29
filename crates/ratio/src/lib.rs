@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(test), no_std)]
 
-use core::{cmp::PartialEq, fmt};
+use core::fmt;
 
 /// The ratio type.
 ///
