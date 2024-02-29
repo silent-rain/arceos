@@ -149,9 +149,9 @@ fn merging_alloc() {
     run_test(|pool| {
         let alloc = AllocatorRc::new(MergingAllocator::new(), pool);
         test_alignment(50, &alloc);
-        // test_vec(3_000_000, &alloc);
-        // test_vec2(30_000, 64, &alloc);
-        // test_vec2(7_500, 520, &alloc);
-        // test_btree_map(50_000, &alloc);
+        test_vec(3_000_000, &alloc);
+        test_vec2(30_000, 64, &alloc);
+        test_vec2(7_500, 520, &alloc);
+        test_btree_map(50_000, &alloc);
     })
 }
