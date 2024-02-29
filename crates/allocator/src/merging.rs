@@ -1,21 +1,34 @@
 //! 提供了一个双向合并的内存分配器实现。
 //! 这个实现基于链表，当释放内存时，会检查前后相邻的空闲内存块，并将它们合并成一个更大的空闲内存块。
 //! 这可以减少内存碎片。
-
 extern crate alloc;
 
+extern crate spin;
+
 use super::{AllocError, AllocResult, BaseAllocator, ByteAllocator};
+use crate::{BitmapPageAllocator, PageAllocator};
 use core::alloc::Layout;
 use core::ptr::NonNull;
+use spin::Mutex;
+use spinlock::SpinNoIrq;
+
+const PAGE_SIZE: usize = 0x1000;
 
 /// 双向合并内存分配器
 pub struct MergingAllocator {
+    // 使用 Mutex 包装链表头指针和统计数据，以确保线程安全
+    inner: Mutex<MergingAllocatorInner>,
+}
+
+/// MergingAllocator 的内部状态，现在被 Mutex 保护
+struct MergingAllocatorInner {
     // 链表头指针
     head: Option<NonNull<FreeBlock>>,
     // 已分配字节数
     total_bytes: usize,
     // 已使用字节数
     used_bytes: usize,
+    palloc: SpinNoIrq<BitmapPageAllocator<PAGE_SIZE>>,
 }
 
 /// 空闲内存块
@@ -26,16 +39,10 @@ struct FreeBlock {
     next: Option<NonNull<FreeBlock>>,
 }
 
-impl MergingAllocator {
-    /// 创建一个新的实例
-    pub const fn new() -> Self {
-        Self {
-            head: None,
-            total_bytes: 0,
-            used_bytes: 0,
-        }
-    }
+unsafe impl Send for FreeBlock {}
+unsafe impl Sync for FreeBlock {}
 
+impl MergingAllocatorInner {
     /// 查找大小至少为size的空闲内存块
     fn find_free_block(&mut self, size: usize) -> Option<NonNull<FreeBlock>> {
         let mut current = &mut self.head;
@@ -107,23 +114,33 @@ impl MergingAllocator {
         }
     }
 
-    fn request_memory(&mut self, size: usize) -> Result<(usize, usize), AllocError> {
-        // const MIN_SIZE: usize = 4096;
-        // 计算实际请求的内存大小，取 size 和 MIN_SIZE 的较大值，这样可以避免频繁地请求内存
-        // let request_size = size.max(MIN_SIZE);
-        assert!(size > 0, "size must be positive"); // 检查 size 是否为正
-        let layout = Layout::from_size_align(size, 1 << 2).unwrap(); // 创建 Layout
-        let ptr = unsafe { alloc::alloc::alloc_zeroed(layout) }; // 分配内存
-        if ptr.is_null() {
-            return Err(AllocError::NoMemory); // 分配失败
+    /// 检查新添加的内存区域是否与现有的内存区域重叠
+    fn checked_block(&mut self, start: usize, size: usize) -> AllocResult<()> {
+        let new_end = start.checked_add(size).ok_or(AllocError::InvalidParam)?;
+
+        let mut current = self.head;
+
+        while let Some(block) = current {
+            let block_ptr = block.as_ptr() as usize;
+            let block_end = block_ptr
+                .checked_add(unsafe { block.as_ref().size })
+                .ok_or(AllocError::InvalidParam)?;
+
+            if start < block_end && new_end > block_ptr {
+                // 新内存区域与现有内存区域重叠
+                return Err(AllocError::MemoryOverlap);
+            }
+            current = unsafe { block.as_ref().next };
         }
-        let start = ptr as usize;
-        // unsafe { alloc::alloc::dealloc(ptr, layout) };
-        Ok((start, size))
+
+        Ok(())
     }
 }
 
-impl BaseAllocator for MergingAllocator {
+unsafe impl Send for MergingAllocatorInner {}
+unsafe impl Sync for MergingAllocatorInner {}
+
+impl BaseAllocator for MergingAllocatorInner {
     /// 初始化内存分配器
     fn init(&mut self, start: usize, size: usize) {
         let mut block = NonNull::new(start as *mut FreeBlock).unwrap();
@@ -134,6 +151,8 @@ impl BaseAllocator for MergingAllocator {
 
     /// 向内存分配器添加内存
     fn add_memory(&mut self, start: usize, size: usize) -> AllocResult {
+        self.checked_block(start, size)?;
+
         let mut block = NonNull::new(start as *mut FreeBlock).unwrap();
         unsafe { block.as_mut().size = size };
         self.insert_free_block(block);
@@ -142,7 +161,7 @@ impl BaseAllocator for MergingAllocator {
     }
 }
 
-impl ByteAllocator for MergingAllocator {
+impl ByteAllocator for MergingAllocatorInner {
     /// 分配内存
     fn alloc(&mut self, layout: Layout) -> AllocResult<NonNull<u8>> {
         // 计算分配内存的大小，取较大值。
@@ -152,10 +171,18 @@ impl ByteAllocator for MergingAllocator {
             Some(block) => block,
             None => {
                 // 如果找不到空闲的内存块，尝试添加一个新的内存块
-                // 从系统或其他来源获取一块内存
-                let (start, size) = self.request_memory(size)?;
+                let old_size = self.total_bytes();
+                let expand_size = old_size
+                    .max(layout.size())
+                    .next_power_of_two()
+                    .max(PAGE_SIZE);
+
+                let heap_ptr = self
+                    .palloc
+                    .lock()
+                    .alloc_pages(expand_size / PAGE_SIZE, PAGE_SIZE)?;
                 // 将新的内存块添加到分配器中
-                self.add_memory(start, size)?;
+                self.add_memory(heap_ptr, size)?;
                 // 再次查找空闲的内存块，这次应该能找到
                 self.find_free_block(size).ok_or(AllocError::NoMemory)?
             }
@@ -206,5 +233,65 @@ impl ByteAllocator for MergingAllocator {
     /// 返回可用字节数
     fn available_bytes(&self) -> usize {
         self.total_bytes - self.used_bytes
+    }
+}
+
+impl MergingAllocator {
+    /// 创建一个新的实例
+    pub const fn new() -> Self {
+        Self {
+            inner: Mutex::new(MergingAllocatorInner {
+                head: None,
+                total_bytes: 0,
+                used_bytes: 0,
+                palloc: SpinNoIrq::new(BitmapPageAllocator::new()),
+            }),
+        }
+    }
+}
+
+impl BaseAllocator for MergingAllocator {
+    /// 初始化内存分配器
+    fn init(&mut self, start: usize, size: usize) {
+        let mut inner = self.inner.lock();
+        inner.init(start, size);
+    }
+
+    /// 向内存分配器添加内存
+    fn add_memory(&mut self, start: usize, size: usize) -> AllocResult {
+        let mut inner = self.inner.lock();
+        inner.add_memory(start, size)
+    }
+}
+
+impl ByteAllocator for MergingAllocator {
+    /// 分配内存
+    fn alloc(&mut self, layout: Layout) -> AllocResult<NonNull<u8>> {
+        let mut inner = self.inner.lock();
+        inner.alloc(layout)
+    }
+
+    /// 释放内存
+    fn dealloc(&mut self, pos: NonNull<u8>, layout: Layout) {
+        let mut inner = self.inner.lock();
+        inner.dealloc(pos, layout);
+    }
+
+    /// 返回总字节数
+    fn total_bytes(&self) -> usize {
+        let inner = self.inner.lock();
+        inner.total_bytes()
+    }
+
+    /// 返回已使用字节数
+    fn used_bytes(&self) -> usize {
+        let inner = self.inner.lock();
+        inner.used_bytes()
+    }
+
+    /// 返回可用字节数
+    fn available_bytes(&self) -> usize {
+        let inner = self.inner.lock();
+        inner.available_bytes()
     }
 }
