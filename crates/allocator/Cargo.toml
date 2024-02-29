@@ -11,7 +11,7 @@ documentation = "https://rcore-os.github.io/arceos/allocator/index.html"
 
 [features]
 default = []
-full = ["bitmap", "tlsf", "slab", "buddy", "allocator_api", "merging", "talc"]
+full = ["bitmap", "tlsf", "slab", "buddy", "allocator_api", "talc"]
 
 bitmap = ["dep:bitmap-allocator"]
 
@@ -19,7 +19,6 @@ tlsf = ["dep:rlsf"]
 slab = ["dep:slab_allocator"]
 buddy = ["dep:buddy_system_allocator"]
 talc = ["dep:talc"]
-merging = []
 
 allocator_api = []
 

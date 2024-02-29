@@ -100,11 +100,6 @@ fn criterion_benchmark(c: &mut Criterion) {
     );
     bench(
         c,
-        "merging",
-        AllocatorRc::new(MergingAllocator::new(), pool.as_slice()),
-    );
-    bench(
-        c,
         "talc",
         AllocatorRc::new(TalcByteAllocator::new(), pool.as_slice()),
     );

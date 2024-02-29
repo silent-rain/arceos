@@ -28,8 +28,6 @@ cfg_if::cfg_if! {
         use allocator::SlabByteAllocator as DefaultByteAllocator;
     } else if #[cfg(feature = "buddy")] {
         use allocator::BuddyByteAllocator as DefaultByteAllocator;
-    } else if #[cfg(feature = "merging")] {
-        use allocator::MergingAllocator as DefaultByteAllocator;
     } else if #[cfg(feature = "talc")] {
         use allocator::TalcByteAllocator as DefaultByteAllocator;
     } else if #[cfg(feature = "tlsf")] {
@@ -69,9 +67,7 @@ impl GlobalAllocator {
                 "slab"
             } else if #[cfg(feature = "buddy")] {
                 "buddy"
-            } else if #[cfg(feature = "merging")] {
-                "merging"
-            }  else if #[cfg(feature = "talc")] {
+            } else if #[cfg(feature = "talc")] {
                 "talc"
             }  else if #[cfg(feature = "tlsf")] {
                 "TLSF"

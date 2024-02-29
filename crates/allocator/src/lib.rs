@@ -32,11 +32,6 @@ mod tlsf;
 #[cfg(feature = "tlsf")]
 pub use tlsf::TlsfByteAllocator;
 
-#[cfg(feature = "merging")]
-mod merging;
-#[cfg(feature = "merging")]
-pub use merging::MergingAllocator;
-
 #[cfg(feature = "talc")]
 mod talc;
 #[cfg(feature = "talc")]

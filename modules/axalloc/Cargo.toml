@@ -14,7 +14,6 @@ default = ["tlsf"]
 tlsf = ["allocator/tlsf"]
 slab = ["allocator/slab"]
 buddy = ["allocator/buddy"]
-merging = ["allocator/merging"]
 talc = ["allocator/talc"]
 
 [dependencies]
