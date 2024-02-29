@@ -6,8 +6,7 @@ use std::collections::BTreeMap;
 use std::io::Write;
 
 use allocator::{
-    AllocatorRc, BuddyByteAllocator, MergingAllocator, SlabByteAllocator, TalcByteAllocator,
-    TlsfByteAllocator,
+    AllocatorRc, BuddyByteAllocator, SlabByteAllocator, TalcByteAllocator, TlsfByteAllocator,
 };
 use rand::{prelude::SliceRandom, Rng};
 
@@ -137,18 +136,6 @@ fn slab_alloc() {
 fn tlsf_alloc() {
     run_test(|pool| {
         let alloc = AllocatorRc::new(TlsfByteAllocator::new(), pool);
-        test_alignment(50, &alloc);
-        test_vec(3_000_000, &alloc);
-        test_vec2(30_000, 64, &alloc);
-        test_vec2(7_500, 520, &alloc);
-        test_btree_map(50_000, &alloc);
-    })
-}
-
-#[test]
-fn merging_alloc() {
-    run_test(|pool| {
-        let alloc = AllocatorRc::new(MergingAllocator::new(), pool);
         test_alignment(50, &alloc);
         test_vec(3_000_000, &alloc);
         test_vec2(30_000, 64, &alloc);

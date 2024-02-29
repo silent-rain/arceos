@@ -8,8 +8,7 @@ use std::collections::BTreeMap;
 use std::io::Write;
 
 use allocator::{
-    AllocatorRc, BuddyByteAllocator, MergingAllocator, SlabByteAllocator, TalcByteAllocator,
-    TlsfByteAllocator,
+    AllocatorRc, BuddyByteAllocator, SlabByteAllocator, TalcByteAllocator, TlsfByteAllocator,
 };
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::{rngs::SmallRng, seq::SliceRandom, RngCore, SeedableRng};

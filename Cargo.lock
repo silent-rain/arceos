@@ -32,7 +32,6 @@ dependencies = [
  "rlsf",
  "slab_allocator",
  "spin 0.9.8",
- "spinlock",
  "talc",
 ]
 
