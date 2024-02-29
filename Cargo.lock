@@ -33,6 +33,7 @@ dependencies = [
  "slab_allocator",
  "spin 0.9.8",
  "spinlock",
+ "talc",
 ]
 
 [[package]]
@@ -1793,6 +1794,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "talc"
+version = "4.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "104ca9cfd3d275985ac58560d407af681a790d11495f042faaab2af69f63c11a"
+dependencies = [
+ "lock_api",
 ]
 
 [[package]]

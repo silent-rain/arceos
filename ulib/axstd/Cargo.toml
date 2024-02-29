@@ -34,6 +34,7 @@ alloc-tlsf = ["axfeat/alloc-tlsf"]
 alloc-slab = ["axfeat/alloc-slab"]
 alloc-buddy = ["axfeat/alloc-buddy"]
 alloc-merging = ["axfeat/alloc-merging"]
+alloc-talc = ["axfeat/alloc-talc"]
 paging = ["axfeat/paging"]
 tls = ["axfeat/tls"]
 

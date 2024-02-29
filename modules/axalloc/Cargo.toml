@@ -15,6 +15,7 @@ tlsf = ["allocator/tlsf"]
 slab = ["allocator/slab"]
 buddy = ["allocator/buddy"]
 merging = ["allocator/merging"]
+talc = ["allocator/talc"]
 
 [dependencies]
 log = "0.4"

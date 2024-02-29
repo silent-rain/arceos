@@ -10,6 +10,7 @@
 
 #![no_std]
 #![cfg_attr(feature = "allocator_api", feature(allocator_api))]
+#![feature(allocator_api)]
 
 #[cfg(feature = "bitmap")]
 mod bitmap;
@@ -35,6 +36,11 @@ pub use tlsf::TlsfByteAllocator;
 mod merging;
 #[cfg(feature = "merging")]
 pub use merging::MergingAllocator;
+
+#[cfg(feature = "talc")]
+mod talc;
+#[cfg(feature = "talc")]
+pub use talc::TalcByteAllocator;
 
 use core::alloc::Layout;
 use core::ptr::NonNull;
