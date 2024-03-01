@@ -9,7 +9,7 @@
 //! - [`IdAllocator`]: Used to allocate unique IDs.
 
 #![no_std]
-#![cfg_attr(feature = "allocator_api", feature(allocator_api))]
+// #![cfg_attr(feature = "allocator_api", feature(allocator_api))]
 #![feature(allocator_api)]
 
 #[cfg(feature = "bitmap")]

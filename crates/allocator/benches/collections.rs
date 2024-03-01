@@ -8,8 +8,7 @@ use std::collections::BTreeMap;
 use std::io::Write;
 
 use allocator::{
-    AllocatorRc, BuddyByteAllocator, MergingAllocator, SlabByteAllocator, TalcByteAllocator,
-    TlsfByteAllocator,
+    AllocatorRc, BuddyByteAllocator, SlabByteAllocator, TalcByteAllocator, TlsfByteAllocator,
 };
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::{rngs::SmallRng, seq::SliceRandom, RngCore, SeedableRng};
@@ -97,11 +96,6 @@ fn criterion_benchmark(c: &mut Criterion) {
         c,
         "buddy",
         AllocatorRc::new(BuddyByteAllocator::new(), pool.as_slice()),
-    );
-    bench(
-        c,
-        "merging",
-        AllocatorRc::new(MergingAllocator::new(), pool.as_slice()),
     );
     bench(
         c,

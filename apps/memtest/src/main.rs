@@ -22,7 +22,7 @@ fn test_vec(rng: &mut impl RngCore) {
     println!("test_vec() OK!");
 }
 
-fn test_hash_map(rng: &mut impl RngCore) {
+fn test_hashmap_map(rng: &mut impl RngCore) {
     const N: usize = 50_000;
     let mut m = HashMap::new();
     for _ in 0..N {
@@ -35,7 +35,7 @@ fn test_hash_map(rng: &mut impl RngCore) {
             assert_eq!(k.parse::<u32>().unwrap(), *v);
         }
     }
-    println!("test_hash_map() OK!");
+    println!("test_hashmap_map() OK!");
 }
 
 #[cfg_attr(feature = "axstd", no_mangle)]
@@ -44,7 +44,7 @@ fn main() {
 
     let mut rng = SmallRng::seed_from_u64(0xdead_beef);
     test_vec(&mut rng);
-    test_hash_map(&mut rng);
+    test_hashmap_map(&mut rng);
 
     println!("Memory tests run OK!");
 }
